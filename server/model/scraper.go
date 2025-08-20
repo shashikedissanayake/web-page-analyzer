@@ -1,12 +1,12 @@
 package model
 
 type HeaderTagsCount struct {
-	H1TagCount int `json:"h1TagCount,omitempty"`
-	H2TagCount int `json:"h2TagCount,omitempty"`
-	H3TagCount int `json:"h3TagCount,omitempty"`
-	H4TagCount int `json:"h4TagCount,omitempty"`
-	H5TagCount int `json:"h5TagCount,omitempty"`
-	H6TagCount int `json:"h6TagCount,omitempty"`
+	H1 int `json:"h1,omitempty"`
+	H2 int `json:"h2,omitempty"`
+	H3 int `json:"h3,omitempty"`
+	H4 int `json:"h4,omitempty"`
+	H5 int `json:"h5,omitempty"`
+	H6 int `json:"h6,omitempty"`
 }
 
 type ScraperResponse struct {

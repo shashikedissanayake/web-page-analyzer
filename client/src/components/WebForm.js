@@ -6,12 +6,14 @@ export const WebForm = () => {
     const [text, setText] = useState('');
     const [data, setData] = useState(null);
     const [error, setError] = useState(null);
+    const [loading, setLoading] = useState(false);
 
     const handleUrlChanges = (e) => {
         setText(e.target.value);
     }
 
     const request = useCallback(async (url) => {
+        setLoading(true);
         setData(null);
         setError(null);
         try {
@@ -19,9 +21,11 @@ export const WebForm = () => {
             setData(response?.data?.data);
         } catch (error) {
             setError(error?.response?.data?.message || 'Failed to access given Url');
+        } finally {
+            setLoading(false);
         }
 
-    }, [setData, setError]);
+    }, [setData, setError, setLoading]);
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -43,6 +47,7 @@ export const WebForm = () => {
                 </div>
             </form>
             <div>
+                {loading && <h3>Loading...</h3>}
                 {(data || error) && <Response data={data} error={error} />}
             </div>
         </div>

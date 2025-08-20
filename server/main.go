@@ -27,9 +27,10 @@ func main() {
 
 	// Utils
 	responseWriterUtil := utils.CreateNewResponseWriter()
+	scraper := utils.CreateWebPageAnalyzer()
 
 	// Services
-	scraperService := service.CreateNewScraperService()
+	scraperService := service.CreateNewScraperService(scraper)
 
 	// Controllers
 	scraperController := controller.CreateNewScraperController(

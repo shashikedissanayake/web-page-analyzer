@@ -18,22 +18,28 @@ export const Response = ({
                     <h3>Html version: {data.htmlVersion}</h3>
                     <h3>Page title: {data.pageTitle}</h3>
                     <h3>Is a login form: {data.isLoginForm ? 'yes' : 'no'}</h3>
-                    <h3>Internal links: Found internal links {data.internalLinkCount} and {data.internalInaccessibleLinkCount} links are inaccessible</h3>
-                    <h3>External links: Found external links {data.externalLinkCount} and {data.externalInaccessibleLinkCount} links are inaccessible</h3>
-                    <ul>
-                        {
-                            Object.entries(data?.headerTagCount || {})?.map(
-                                (
-                                    { tag, count }) => {
-                                    return (
-                                        <li>
-                                            <h3>Found {count} tags of {tag}</h3>
-                                        </li>
-                                    )
-                                }
-                            )
-                        }
-                    </ul>
+                    <h3>Internal link count: {data.internalLinkCount}</h3>
+                    <h3>Inaccessible Internal link count: {data.internalInaccessibleLinkCount}</h3>
+                    <h3>External link count: {data.externalLinkCount}</h3>
+                    <h3>Inaccessible External link count: {data.externalInaccessibleLinkCount}</h3>
+                    {
+                        Object.entries(data?.headerTagCount || {}).length > 0 ?
+                            <>
+                                <h3>Found following headers in the page</h3>
+                                <ul>
+                                    {
+                                        Object.entries(data?.headerTagCount || {})?.map(
+                                            ([tag, count]) => (
+                                                <li key={tag}>
+                                                    <h3>Found {count} of {tag} tags</h3>
+                                                </li>
+                                            )
+                                        )
+                                    }
+                                </ul>
+                            </>
+                            : <h3>No header tags found</h3>
+                    }
                 </div>
             }
         </div>

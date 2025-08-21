@@ -10,14 +10,17 @@ type IScraperService interface {
 }
 
 type ScraperService struct {
+	scraper utils.IWebPageAnalyzer
 }
 
-func CreateNewScraperService() IScraperService {
-	return &ScraperService{}
+func CreateNewScraperService(scraper utils.IWebPageAnalyzer) IScraperService {
+	return &ScraperService{
+		scraper,
+	}
 }
 
 func (ss *ScraperService) ScrapeWebPage(url string) (*model.ScraperResponse, error) {
-	res, err := utils.ScrapeWebPage(url)
+	res, err := ss.scraper.AnalyzeWebPage(url)
 	if err != nil {
 		return nil, err
 	}
@@ -47,5 +50,13 @@ func (ss *ScraperService) ScrapeWebPage(url string) (*model.ScraperResponse, err
 		ExternalLinkCount:             externalLinkCount,
 		ExternalInaccessibleLinkCount: externalInaccessibleLinkCount,
 		IsLoginForm:                   res.IsLoginForm,
+		HeaderTagCount: model.HeaderTagsCount{
+			H1: res.HeaderTags["h1"],
+			H2: res.HeaderTags["h2"],
+			H3: res.HeaderTags["h3"],
+			H4: res.HeaderTags["h4"],
+			H5: res.HeaderTags["h5"],
+			H6: res.HeaderTags["h6"],
+		},
 	}, nil
 }

@@ -34,7 +34,7 @@ func (ss *ScraperService) ScrapeWebPage(url string) (*model.ScraperResponse, err
 	}
 
 	externalLinkCount, externalInaccessibleLinkCount := 0, 0
-	for _, val := range res.Links.Internal {
+	for _, val := range res.Links.External {
 		externalLinkCount++
 		if !val {
 			externalInaccessibleLinkCount++

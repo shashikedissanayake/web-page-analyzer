@@ -38,6 +38,7 @@ type Response struct {
 	HeaderTags  map[string]int
 }
 
+//go:generate mockgen -source=web-page-analyzer.go -destination=web-page-analyzer_mock.go -package=utils
 type IWebPageAnalyzer interface {
 	AnalyzeWebPage(string) (*Response, error)
 }

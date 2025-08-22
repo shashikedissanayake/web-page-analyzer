@@ -5,6 +5,7 @@ import (
 	"github.com/shashikedissanayake/web-page-analyzer/server/utils"
 )
 
+//go:generate mockgen -source=scraper-service.go -destination=scraper-service_mock.go -package=service
 type IScraperService interface {
 	ScrapeWebPage(string) (*model.ScraperResponse, error)
 }

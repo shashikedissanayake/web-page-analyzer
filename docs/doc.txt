@@ -1,0 +1,31 @@
+Challenges:
+- Finding a project structure for the project.
+  GoLang doesn't have any required project structure when it's comes to organizing codebase.
+  I used controller, model, service structure for now since I'm familiar with structure and it make sense for majority of backend projects.
+
+- Finding a way to extract data from webpage.
+  Without using high level libraries like `colly`, I found 2 ways to iterate through a webpage.
+  Those methods are using `Html parser` and using `Html tokenizor`
+  I chose `Html tokenizor` because it's simple and fast compared to recursive `Html parser` method.
+
+- Finding a link is accessible or not.
+  Without fetching total webpage, which takes more time, I used fetching Head object fetch method.
+  Because this is faster compared to web page fetch due to dropping to page content.
+  I found dial up also but it's just a ping method I avoid that because I need status code to exactly say page accessible or not.
+
+- Using goroutines and channels.
+  I used go channels to update page accessibility.
+  Earlier approach caused me deadlock due to using consumer loop inside `iterateTokenizer` function.
+  Since I'm using a single channel to pass data from multiple goroutines, finding a correct place to call channel close called me problem.
+  I resolved this by consuming data in a separate thread. I didn't wanted to use mutexes here because channel accepts only one value at a given time. 
+
+
+Improvements:
+- Endpoint takes around 5sec to respond depending on the webpage. 
+  Mainly accessibility check take majority of time. 
+  Response time can be improved if it's possible to takle this. 
+  Connection dial up can be a solution but that might not check status code. 
+  Therefore I used Head fetch for now.
+
+- I haven't use any authentications for now.
+  It's better to secure external calling endpoints with JWT or similar.

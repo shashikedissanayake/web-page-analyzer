@@ -7,20 +7,23 @@ import (
 )
 
 type Server struct {
-	Config            *config.Configuration // Configuration
-	ScraperController controller.IScraperController
-	ScraperService    service.IScraperService
+	Config                *config.Configuration // Configuration
+	healthCheckController controller.IHealthCheckController
+	ScraperController     controller.IScraperController
+	ScraperService        service.IScraperService
 }
 
 func CreateNewServer(
 	config *config.Configuration,
 	scraperService service.IScraperService,
 	scraperController controller.IScraperController,
+	healthCheckController controller.IHealthCheckController,
 ) *Server {
 	server := &Server{
-		Config:            config,
-		ScraperController: scraperController,
-		ScraperService:    scraperService,
+		Config:                config,
+		healthCheckController: healthCheckController,
+		ScraperController:     scraperController,
+		ScraperService:        scraperService,
 	}
 	return server
 }

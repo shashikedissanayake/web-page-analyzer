@@ -4,6 +4,8 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
+
+	custom_middlewares "github.com/shashikedissanayake/web-page-analyzer/server/middleware"
 )
 
 func CreateNewRouter(s *Server) *chi.Mux {
@@ -17,8 +19,15 @@ func CreateNewRouter(s *Server) *chi.Mux {
 	}))
 	router.Use(middleware.Logger)
 
-	// Routes
-	router.Post("/analyze", s.ScraperController.ScrapeWebPage)
+	// Public routes
+	router.Get("/health_check", s.healthCheckController.HealthCheck)
+
+	// Authenticated routes
+	router.Group(func(r chi.Router) {
+		r.Use(custom_middlewares.AuthMiddleware)
+
+		r.Post("/analyze", s.ScraperController.ScrapeWebPage)
+	})
 
 	return router
 }

@@ -17,6 +17,7 @@ func IsValidURL(url string) bool {
 	return err == nil && parsedUrl.Host != ""
 }
 
+// Generate URLs using passed href
 func GenerateInternalUrl(url string, href string) string {
 	generatedUrl := ""
 	// Check href contains section in the path

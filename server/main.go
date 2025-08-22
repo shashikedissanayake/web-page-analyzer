@@ -36,11 +36,15 @@ func main() {
 	scraperController := controller.CreateNewScraperController(
 		scraperService, responseWriterUtil,
 	)
+	healthCheckController := controller.CreateNewHealthCheckController(
+		responseWriterUtil,
+	)
 
 	server := core.CreateNewServer(
 		config,
 		scraperService,
 		scraperController,
+		healthCheckController,
 	)
 
 	router := core.CreateNewRouter(server)

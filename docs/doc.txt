@@ -17,7 +17,10 @@ Challenges:
   I used go channels to update page accessibility.
   Earlier approach caused me deadlock due to using consumer loop inside `iterateTokenizer` function.
   Since I'm using a single channel to pass data from multiple goroutines, finding a correct place to call channel close called me problem.
-  I resolved this by consuming data in a separate thread. I didn't wanted to use mutexes here because channel accepts only one value at a given time. 
+  I resolved this by consuming data in a separate thread. I didn't wanted to use mutexes here because channel accepts only one value at a given time.
+
+- Writing unit tests.
+  Writing unit tests for controllers needs more research to be done due to cannot simply calling controller function with given inputs 
 
 
 Improvements:
@@ -29,3 +32,7 @@ Improvements:
 
 - I haven't use any authentications for now.
   It's better to secure external calling endpoints with JWT or similar.
+
+- Need to improve unit testing
+
+- Add some styles into FE application

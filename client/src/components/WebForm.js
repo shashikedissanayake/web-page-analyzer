@@ -20,7 +20,11 @@ export const WebForm = () => {
             const response = await axios.post(`${process.env.REACT_APP_SERVER_URL}/analyze`, { url });
             setData(response?.data?.data);
         } catch (error) {
-            setError(error?.response?.data?.message || 'Failed to access given Url');
+            setError({
+                message: error?.response?.data?.message || 'Failed to access given Url',
+                code: error?.response?.data?.statusCode || 500,
+                error: error?.response?.data?.error || ''
+            });
         } finally {
             setLoading(false);
         }

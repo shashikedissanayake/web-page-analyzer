@@ -48,9 +48,12 @@ func (sss *ScraperServiceSuite) TestScrapeWebPage() {
 			&utils.Response{
 				HtmlVersion: "Html5",
 				Title:       "test title",
-				Links: utils.Links{
-					Internal: map[string]bool{"/test": false, "/login": true, "test1": false},
-					External: map[string]bool{"http://google.com": true, "http://google.com/test": false},
+				Links: map[string]*utils.Links{
+					"/test":                  {LinkType: utils.INTERNAL, Count: 2, IsAccessible: false},
+					"/login":                 {LinkType: utils.INTERNAL, Count: 1, IsAccessible: true},
+					"#test1":                 {LinkType: utils.INTERNAL, Count: 2, IsAccessible: false},
+					"http://google.com":      {LinkType: utils.EXTERNAL, Count: 1, IsAccessible: true},
+					"http://google.com/test": {LinkType: utils.EXTERNAL, Count: 1, IsAccessible: false},
 				},
 				IsLoginForm: true,
 				HeaderTags:  map[string]int{"h1": 4, "h2": 10},
@@ -61,6 +64,7 @@ func (sss *ScraperServiceSuite) TestScrapeWebPage() {
 				HtmlVersion:                   "Html5",
 				PageTitle:                     "test title",
 				HeaderTagCount:                model.HeaderTagsCount{H1: 4, H2: 10},
+				TotalLinkCount:                7,
 				InternalLinkCount:             3,
 				InternalInaccessibleLinkCount: 2,
 				ExternalLinkCount:             2,
@@ -75,7 +79,9 @@ func (sss *ScraperServiceSuite) TestScrapeWebPage() {
 			&utils.Response{
 				HtmlVersion: "Html5",
 				Title:       "test title",
-				Links:       utils.Links{Internal: map[string]bool{}, External: map[string]bool{"http://google.com": true}},
+				Links: map[string]*utils.Links{
+					"http://google.com": {LinkType: utils.EXTERNAL, Count: 1, IsAccessible: true},
+				},
 				IsLoginForm: false,
 				HeaderTags:  map[string]int{"h1": 4, "h2": 10},
 			},
@@ -85,6 +91,7 @@ func (sss *ScraperServiceSuite) TestScrapeWebPage() {
 				HtmlVersion:                   "Html5",
 				PageTitle:                     "test title",
 				HeaderTagCount:                model.HeaderTagsCount{H1: 4, H2: 10},
+				TotalLinkCount:                1,
 				InternalLinkCount:             0,
 				InternalInaccessibleLinkCount: 0,
 				ExternalLinkCount:             1,
@@ -99,7 +106,9 @@ func (sss *ScraperServiceSuite) TestScrapeWebPage() {
 			&utils.Response{
 				HtmlVersion: "Html5",
 				Title:       "test title",
-				Links:       utils.Links{Internal: map[string]bool{"/test": false}, External: map[string]bool{}},
+				Links: map[string]*utils.Links{
+					"/test": {LinkType: utils.INTERNAL, Count: 1, IsAccessible: false},
+				},
 				IsLoginForm: false,
 				HeaderTags:  map[string]int{"h1": 4, "h2": 10},
 			},
@@ -109,6 +118,7 @@ func (sss *ScraperServiceSuite) TestScrapeWebPage() {
 				HtmlVersion:                   "Html5",
 				PageTitle:                     "test title",
 				HeaderTagCount:                model.HeaderTagsCount{H1: 4, H2: 10},
+				TotalLinkCount:                1,
 				InternalLinkCount:             1,
 				InternalInaccessibleLinkCount: 1,
 				ExternalLinkCount:             0,
@@ -123,7 +133,10 @@ func (sss *ScraperServiceSuite) TestScrapeWebPage() {
 			&utils.Response{
 				HtmlVersion: "Html5",
 				Title:       "test title",
-				Links:       utils.Links{Internal: map[string]bool{"/test": false}, External: map[string]bool{"http://google.com": true}},
+				Links: map[string]*utils.Links{
+					"/test":             {LinkType: utils.INTERNAL, Count: 2, IsAccessible: false},
+					"http://google.com": {LinkType: utils.EXTERNAL, Count: 1, IsAccessible: true},
+				},
 				IsLoginForm: false,
 				HeaderTags:  map[string]int{},
 			},
@@ -133,6 +146,7 @@ func (sss *ScraperServiceSuite) TestScrapeWebPage() {
 				HtmlVersion:                   "Html5",
 				PageTitle:                     "test title",
 				HeaderTagCount:                model.HeaderTagsCount{},
+				TotalLinkCount:                3,
 				InternalLinkCount:             1,
 				InternalInaccessibleLinkCount: 1,
 				ExternalLinkCount:             1,

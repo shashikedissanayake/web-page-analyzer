@@ -1,10 +1,10 @@
 package utils
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
+	"regexp"
 	"strings"
 	"sync"
 
@@ -26,14 +26,15 @@ type LinkDetails struct {
 }
 
 type Links struct {
-	Internal map[string]bool
-	External map[string]bool
+	LinkType     LinkType
+	Count        int
+	IsAccessible bool
 }
 
 type Response struct {
 	HtmlVersion string
 	Title       string
-	Links       Links
+	Links       map[string]*Links
 	IsLoginForm bool
 	HeaderTags  map[string]int
 }
@@ -63,18 +64,18 @@ func (wpa *WebPageAnalyzer) AnalyzeWebPage(url string) (*Response, error) {
 func (wpa *WebPageAnalyzer) fetchWebPage(url string) (*html.Tokenizer, error) {
 	resp, err := http.Get(url)
 	if err != nil {
-		logger.Error("Failed to fetch webpage for given URL:", url)
-		return nil, err
+		logger.Error("Failed to fetch webpage for given URL:", url, "with error:", err.Error())
+		return nil, fmt.Errorf("failed to get url with error: %s", err.Error())
 	} else if resp.StatusCode != http.StatusOK {
 		logger.Error("Failed to fetch webpage for given URL:", url, " with status:", resp.StatusCode)
-		return nil, errors.New("FAILED_TO_FETCH")
+		return nil, fmt.Errorf("failed to fetch page with status code: %d", resp.StatusCode)
 	}
 
 	defer resp.Body.Close()
 	webpage, err := io.ReadAll(resp.Body)
 	if err != nil {
-		logger.Error("Failed to read webpage for given URL:", url)
-		return nil, err
+		logger.Error("Failed to read webpage for given URL:", url, " with error:", err.Error())
+		return nil, fmt.Errorf("failed to read response with error:%s", err.Error())
 	}
 
 	tokenizer := html.NewTokenizer(strings.NewReader(string(webpage)))
@@ -89,10 +90,7 @@ func (wpa *WebPageAnalyzer) iterateTokenizer(
 ) Response {
 	response := Response{
 		HeaderTags: map[string]int{},
-		Links: Links{
-			Internal: map[string]bool{},
-			External: map[string]bool{},
-		},
+		Links:      map[string]*Links{},
 	}
 
 	if tokenizer == nil {
@@ -106,7 +104,7 @@ func (wpa *WebPageAnalyzer) iterateTokenizer(
 
 	logger.Info("Start iteration of tokenized webpage")
 
-	go wpa.resultsReader(&response.Links, linkDetailsChannel)
+	go wpa.resultsReader(response.Links, linkDetailsChannel)
 loop:
 	for {
 		tokenType := tokenizer.Next()
@@ -135,13 +133,22 @@ loop:
 			case "a":
 				for _, attrbute := range token.Attr {
 					if attrbute.Key == "href" {
-						wg.Add(1)
-						go wpa.markAccessiblityOfLink(
-							url,
-							attrbute.Val,
-							&wg,
-							linkDetailsChannel,
-						)
+						record, isFound := response.Links[attrbute.Val]
+						if !isFound {
+							response.Links[attrbute.Val] = &Links{
+								Count: 1,
+							}
+
+							wg.Add(1)
+							go wpa.markAccessiblityOfLink(
+								url,
+								attrbute.Val,
+								&wg,
+								linkDetailsChannel,
+							)
+						} else {
+							record.Count++
+						}
 					}
 				}
 			case "form":
@@ -169,12 +176,15 @@ loop:
 }
 
 func (wpa *WebPageAnalyzer) getHTMLVersion(doctypeToken *html.Token) string {
+	olderHtmlversionIdentifierRegEx := regexp.MustCompile(` ".+" `)
 	if doctypeToken != nil && doctypeToken.Type == html.DoctypeToken {
-		if strings.ToLower(doctypeToken.Data) == "html" && len(doctypeToken.Attr) == 0 {
-			return "HTML5"
+		versionDetails := CleanFields(olderHtmlversionIdentifierRegEx.FindString(doctypeToken.Data))
+		if strings.ToLower(doctypeToken.Data) == "html" {
+			return "HTML 5"
+		} else if versionDetails != "" {
+			versionDetails := strings.ReplaceAll(versionDetails, "\"", "")
+			return strings.Join(strings.Split(versionDetails, " ")[1:], " ")
 		}
-
-		return fmt.Sprintf("HTML (DOCTYPE: %s)", doctypeToken.Data)
 	}
 	return "Unknown"
 }
@@ -212,14 +222,23 @@ func (wpa *WebPageAnalyzer) markAccessiblityOfLink(
 	logger.Info("Finished fetching head object of key:", key, " with results:", isAccessibleLink)
 }
 
-func (wpa *WebPageAnalyzer) resultsReader(links *Links, linkDetailsChan <-chan LinkDetails) {
+func (wpa *WebPageAnalyzer) resultsReader(links map[string]*Links, linkDetailsChan <-chan LinkDetails) {
 	for linkDetail := range linkDetailsChan {
 		logger.Info("Successfully consumed message with url:", linkDetail.URL)
+
+		record, ok := links[linkDetail.URL]
+		if !ok {
+			logger.Error("Record not found for key:", linkDetail.URL)
+			return
+		}
+
 		switch linkDetail.LinkType {
 		case INTERNAL:
-			links.Internal[linkDetail.URL] = linkDetail.IsAccessible
+			record.LinkType = INTERNAL
+			record.IsAccessible = linkDetail.IsAccessible
 		case EXTERNAL:
-			links.External[linkDetail.URL] = linkDetail.IsAccessible
+			record.LinkType = EXTERNAL
+			record.IsAccessible = linkDetail.IsAccessible
 		}
 	}
 	logger.Info("Successfully exited from channel")

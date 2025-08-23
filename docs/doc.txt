@@ -22,6 +22,10 @@ Challenges:
 - Writing unit tests.
   Writing unit tests for controllers needs more research to be done due to cannot simply calling controller function with given inputs 
 
+- Finding a page is a login page or not
+  With oAuth buttons like login with Google, Facebook and Apple, it quite hard to identify with such buttons.
+  Main reason is that these buttons behave dynamically and can have custom names or totally emit the name and show an image.
+  For now I use simple check of form with two input fields with type text/email with password.
 
 Improvements:
 - Endpoint takes around 5sec to respond depending on the webpage. 

@@ -1,4 +1,4 @@
-package utils
+package service
 
 import (
 	"fmt"
@@ -8,49 +8,24 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/shashikedissanayake/web-page-analyzer/server/model"
+	"github.com/shashikedissanayake/web-page-analyzer/server/utils"
 	logger "github.com/sirupsen/logrus"
 	"golang.org/x/net/html"
 )
 
-type LinkType string
-
-const (
-	INTERNAL LinkType = "INTERNAL"
-	EXTERNAL LinkType = "EXTERNAL"
-)
-
-type LinkDetails struct {
-	LinkType     LinkType
-	URL          string
-	IsAccessible bool
+//go:generate mockgen -source=webpage_analyzer_service.go -destination=webpage_analyzer_service_mock.go -package=service
+type IWebPageAnalyzerService interface {
+	AnalyzeWebPage(string) (*model.AnalyzerResults, error)
 }
 
-type Links struct {
-	LinkType     LinkType
-	Count        int
-	IsAccessible bool
+type WebPageAnalyzerService struct{}
+
+func CreateWebPageAnalyzerService() IWebPageAnalyzerService {
+	return &WebPageAnalyzerService{}
 }
 
-type Response struct {
-	HtmlVersion string
-	Title       string
-	Links       map[string]*Links
-	IsLoginForm bool
-	HeaderTags  map[string]int
-}
-
-//go:generate mockgen -source=web-page-analyzer.go -destination=web-page-analyzer_mock.go -package=utils
-type IWebPageAnalyzer interface {
-	AnalyzeWebPage(string) (*Response, error)
-}
-
-type WebPageAnalyzer struct{}
-
-func CreateWebPageAnalyzer() IWebPageAnalyzer {
-	return &WebPageAnalyzer{}
-}
-
-func (wpa *WebPageAnalyzer) AnalyzeWebPage(url string) (*Response, error) {
+func (wpa *WebPageAnalyzerService) AnalyzeWebPage(url string) (*model.AnalyzerResults, error) {
 	tokenizer, err := wpa.fetchWebPage(url)
 	if err != nil {
 		return nil, err
@@ -61,7 +36,7 @@ func (wpa *WebPageAnalyzer) AnalyzeWebPage(url string) (*Response, error) {
 	return &response, nil
 }
 
-func (wpa *WebPageAnalyzer) fetchWebPage(url string) (*html.Tokenizer, error) {
+func (wpa *WebPageAnalyzerService) fetchWebPage(url string) (*html.Tokenizer, error) {
 	resp, err := http.Get(url)
 	if err != nil {
 		logger.Error("Failed to fetch webpage for given URL:", url, "with error:", err.Error())
@@ -85,12 +60,12 @@ func (wpa *WebPageAnalyzer) fetchWebPage(url string) (*html.Tokenizer, error) {
 	return tokenizer, nil
 }
 
-func (wpa *WebPageAnalyzer) iterateTokenizer(
+func (wpa *WebPageAnalyzerService) iterateTokenizer(
 	tokenizer *html.Tokenizer, url string,
-) Response {
-	response := Response{
+) model.AnalyzerResults {
+	response := model.AnalyzerResults{
 		HeaderTags: map[string]int{},
-		Links:      map[string]*Links{},
+		Links:      map[string]*model.Links{},
 	}
 
 	if tokenizer == nil {
@@ -100,7 +75,7 @@ func (wpa *WebPageAnalyzer) iterateTokenizer(
 
 	isForm, containsEmailInput, containsPasswordInput := false, false, false
 	wg := sync.WaitGroup{}
-	linkDetailsChannel := make(chan LinkDetails)
+	linkDetailsChannel := make(chan model.LinkDetails)
 
 	logger.Info("Start iteration of tokenized webpage")
 
@@ -135,7 +110,7 @@ loop:
 					if attrbute.Key == "href" {
 						record, isFound := response.Links[attrbute.Val]
 						if !isFound {
-							response.Links[attrbute.Val] = &Links{
+							response.Links[attrbute.Val] = &model.Links{
 								Count: 1,
 							}
 
@@ -175,10 +150,10 @@ loop:
 	return response
 }
 
-func (wpa *WebPageAnalyzer) getHTMLVersion(doctypeToken *html.Token) string {
+func (wpa *WebPageAnalyzerService) getHTMLVersion(doctypeToken *html.Token) string {
 	olderHtmlversionIdentifierRegEx := regexp.MustCompile(` ".+" `)
 	if doctypeToken != nil && doctypeToken.Type == html.DoctypeToken {
-		versionDetails := CleanFields(olderHtmlversionIdentifierRegEx.FindString(doctypeToken.Data))
+		versionDetails := utils.CleanFields(olderHtmlversionIdentifierRegEx.FindString(doctypeToken.Data))
 		if strings.ToLower(doctypeToken.Data) == "html" {
 			return "HTML 5"
 		} else if versionDetails != "" {
@@ -189,40 +164,40 @@ func (wpa *WebPageAnalyzer) getHTMLVersion(doctypeToken *html.Token) string {
 	return "Unknown"
 }
 
-func (wpa *WebPageAnalyzer) markAccessiblityOfLink(
+func (wpa *WebPageAnalyzerService) markAccessiblityOfLink(
 	currentUrl string,
 	key string,
 	wg *sync.WaitGroup,
-	linkDetailsChan chan<- LinkDetails,
+	linkDetailsChan chan<- model.LinkDetails,
 ) {
 	logger.Info("Started fetching head object of key:", key)
 	defer wg.Done()
 
 	url := key
-	isValidUrl := IsValidURL(url)
+	isValidUrl := utils.IsValidURL(url)
 	if !isValidUrl {
-		url = GenerateInternalUrl(currentUrl, key)
+		url = utils.GenerateInternalUrl(currentUrl, key)
 	}
 
 	resp, err := http.Head(url)
 	isAccessibleLink := err == nil && resp.StatusCode == http.StatusOK
 
-	linkDetails := LinkDetails{
+	linkDetails := model.LinkDetails{
 		URL:          key,
 		IsAccessible: isAccessibleLink,
 	}
 
 	if isValidUrl {
-		linkDetails.LinkType = EXTERNAL
+		linkDetails.LinkType = model.EXTERNAL
 	} else {
-		linkDetails.LinkType = INTERNAL
+		linkDetails.LinkType = model.INTERNAL
 	}
 	linkDetailsChan <- linkDetails
 
 	logger.Info("Finished fetching head object of key:", key, " with results:", isAccessibleLink)
 }
 
-func (wpa *WebPageAnalyzer) resultsReader(links map[string]*Links, linkDetailsChan <-chan LinkDetails) {
+func (wpa *WebPageAnalyzerService) resultsReader(links map[string]*model.Links, linkDetailsChan <-chan model.LinkDetails) {
 	for linkDetail := range linkDetailsChan {
 		logger.Info("Successfully consumed message with url:", linkDetail.URL)
 
@@ -233,11 +208,11 @@ func (wpa *WebPageAnalyzer) resultsReader(links map[string]*Links, linkDetailsCh
 		}
 
 		switch linkDetail.LinkType {
-		case INTERNAL:
-			record.LinkType = INTERNAL
+		case model.INTERNAL:
+			record.LinkType = model.INTERNAL
 			record.IsAccessible = linkDetail.IsAccessible
-		case EXTERNAL:
-			record.LinkType = EXTERNAL
+		case model.EXTERNAL:
+			record.LinkType = model.EXTERNAL
 			record.IsAccessible = linkDetail.IsAccessible
 		}
 	}

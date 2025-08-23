@@ -10,7 +10,7 @@ import (
 	logger "github.com/sirupsen/logrus"
 )
 
-//go:generate mockgen -source=scraper-controller.go -destination=scraper-controller_mock.go -package=controller
+//go:generate mockgen -source=scraper_controller.go -destination=scraper_controller_mock.go -package=controller
 type IScraperController interface {
 	ScrapeWebPage(http.ResponseWriter, *http.Request)
 }

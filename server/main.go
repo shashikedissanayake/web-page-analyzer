@@ -7,7 +7,7 @@ import (
 
 	"github.com/shashikedissanayake/web-page-analyzer/server/config"
 	"github.com/shashikedissanayake/web-page-analyzer/server/controller"
-	"github.com/shashikedissanayake/web-page-analyzer/server/core"
+	"github.com/shashikedissanayake/web-page-analyzer/server/router"
 	"github.com/shashikedissanayake/web-page-analyzer/server/service"
 	"github.com/shashikedissanayake/web-page-analyzer/server/utils"
 	logger "github.com/sirupsen/logrus"
@@ -27,10 +27,10 @@ func main() {
 
 	// Utils
 	responseWriterUtil := utils.CreateNewResponseWriter()
-	scraper := utils.CreateWebPageAnalyzer()
 
 	// Services
-	scraperService := service.CreateNewScraperService(scraper)
+	webpageAnalyzerService := service.CreateWebPageAnalyzerService()
+	scraperService := service.CreateNewScraperService(webpageAnalyzerService)
 
 	// Controllers
 	scraperController := controller.CreateNewScraperController(
@@ -40,14 +40,13 @@ func main() {
 		responseWriterUtil,
 	)
 
-	server := core.CreateNewServer(
+	server := router.CreateNewServer(
 		config,
-		scraperService,
 		scraperController,
 		healthCheckController,
 	)
 
-	router := core.CreateNewRouter(server)
+	router := router.CreateNewRouter(server)
 
 	port := config.Port
 	logger.Info("Server started on port: ", port)

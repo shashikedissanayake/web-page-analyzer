@@ -2,19 +2,18 @@ package service
 
 import (
 	"github.com/shashikedissanayake/web-page-analyzer/server/model"
-	"github.com/shashikedissanayake/web-page-analyzer/server/utils"
 )
 
-//go:generate mockgen -source=scraper-service.go -destination=scraper-service_mock.go -package=service
+//go:generate mockgen -source=scraper_service.go -destination=scraper_service_mock.go -package=service
 type IScraperService interface {
 	ScrapeWebPage(string) (*model.ScraperResponse, error)
 }
 
 type ScraperService struct {
-	scraper utils.IWebPageAnalyzer
+	scraper IWebPageAnalyzerService
 }
 
-func CreateNewScraperService(scraper utils.IWebPageAnalyzer) IScraperService {
+func CreateNewScraperService(scraper IWebPageAnalyzerService) IScraperService {
 	return &ScraperService{
 		scraper,
 	}
@@ -30,12 +29,12 @@ func (ss *ScraperService) ScrapeWebPage(url string) (*model.ScraperResponse, err
 	for _, link := range res.Links {
 		totalLinks += link.Count
 		switch link.LinkType {
-		case utils.INTERNAL:
+		case model.INTERNAL:
 			internalLinks++
 			if !link.IsAccessible {
 				internalInaccessibleLinks++
 			}
-		case utils.EXTERNAL:
+		case model.EXTERNAL:
 			externalLinks++
 			if !link.IsAccessible {
 				externalInaccessibleLinks++

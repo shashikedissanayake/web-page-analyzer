@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/shashikedissanayake/web-page-analyzer/server/model"
-	"github.com/shashikedissanayake/web-page-analyzer/server/utils"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -13,7 +12,7 @@ import (
 type ScraperServiceSuite struct {
 	suite.Suite
 	service     IScraperService
-	mockScraper *utils.MockIWebPageAnalyzer
+	mockScraper *MockIWebPageAnalyzerService
 }
 
 func TestScraperServiceSuite(t *testing.T) {
@@ -21,7 +20,7 @@ func TestScraperServiceSuite(t *testing.T) {
 }
 
 func (sss *ScraperServiceSuite) SetupTest() {
-	sss.mockScraper = utils.NewMockIWebPageAnalyzer(gomock.NewController(sss.T()))
+	sss.mockScraper = NewMockIWebPageAnalyzerService(gomock.NewController(sss.T()))
 	sss.service = CreateNewScraperService(sss.mockScraper)
 }
 
@@ -29,7 +28,7 @@ func (sss *ScraperServiceSuite) TestScrapeWebPage() {
 	var testCases = []struct {
 		name           string
 		input          string
-		mockOutput     *utils.Response
+		mockOutput     *model.AnalyzerResults
 		mockError      error
 		expectedOutput *model.ScraperResponse
 		expectedError  error
@@ -45,15 +44,15 @@ func (sss *ScraperServiceSuite) TestScrapeWebPage() {
 		{
 			"ScrapeWebPage return valid results",
 			"test",
-			&utils.Response{
+			&model.AnalyzerResults{
 				HtmlVersion: "Html5",
 				Title:       "test title",
-				Links: map[string]*utils.Links{
-					"/test":                  {LinkType: utils.INTERNAL, Count: 2, IsAccessible: false},
-					"/login":                 {LinkType: utils.INTERNAL, Count: 1, IsAccessible: true},
-					"#test1":                 {LinkType: utils.INTERNAL, Count: 2, IsAccessible: false},
-					"http://google.com":      {LinkType: utils.EXTERNAL, Count: 1, IsAccessible: true},
-					"http://google.com/test": {LinkType: utils.EXTERNAL, Count: 1, IsAccessible: false},
+				Links: map[string]*model.Links{
+					"/test":                  {LinkType: model.INTERNAL, Count: 2, IsAccessible: false},
+					"/login":                 {LinkType: model.INTERNAL, Count: 1, IsAccessible: true},
+					"#test1":                 {LinkType: model.INTERNAL, Count: 2, IsAccessible: false},
+					"http://google.com":      {LinkType: model.EXTERNAL, Count: 1, IsAccessible: true},
+					"http://google.com/test": {LinkType: model.EXTERNAL, Count: 1, IsAccessible: false},
 				},
 				IsLoginForm: true,
 				HeaderTags:  map[string]int{"h1": 4, "h2": 10},
@@ -76,11 +75,11 @@ func (sss *ScraperServiceSuite) TestScrapeWebPage() {
 		{
 			"ScrapeWebPage return valid results with empty internal map",
 			"test",
-			&utils.Response{
+			&model.AnalyzerResults{
 				HtmlVersion: "Html5",
 				Title:       "test title",
-				Links: map[string]*utils.Links{
-					"http://google.com": {LinkType: utils.EXTERNAL, Count: 1, IsAccessible: true},
+				Links: map[string]*model.Links{
+					"http://google.com": {LinkType: model.EXTERNAL, Count: 1, IsAccessible: true},
 				},
 				IsLoginForm: false,
 				HeaderTags:  map[string]int{"h1": 4, "h2": 10},
@@ -103,11 +102,11 @@ func (sss *ScraperServiceSuite) TestScrapeWebPage() {
 		{
 			"ScrapeWebPage return valid results with empty external map",
 			"test",
-			&utils.Response{
+			&model.AnalyzerResults{
 				HtmlVersion: "Html5",
 				Title:       "test title",
-				Links: map[string]*utils.Links{
-					"/test": {LinkType: utils.INTERNAL, Count: 1, IsAccessible: false},
+				Links: map[string]*model.Links{
+					"/test": {LinkType: model.INTERNAL, Count: 1, IsAccessible: false},
 				},
 				IsLoginForm: false,
 				HeaderTags:  map[string]int{"h1": 4, "h2": 10},
@@ -130,12 +129,12 @@ func (sss *ScraperServiceSuite) TestScrapeWebPage() {
 		{
 			"ScrapeWebPage return valid results with empty header list",
 			"test",
-			&utils.Response{
+			&model.AnalyzerResults{
 				HtmlVersion: "Html5",
 				Title:       "test title",
-				Links: map[string]*utils.Links{
-					"/test":             {LinkType: utils.INTERNAL, Count: 2, IsAccessible: false},
-					"http://google.com": {LinkType: utils.EXTERNAL, Count: 1, IsAccessible: true},
+				Links: map[string]*model.Links{
+					"/test":             {LinkType: model.INTERNAL, Count: 2, IsAccessible: false},
+					"http://google.com": {LinkType: model.EXTERNAL, Count: 1, IsAccessible: true},
 				},
 				IsLoginForm: false,
 				HeaderTags:  map[string]int{},

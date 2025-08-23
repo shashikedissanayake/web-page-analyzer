@@ -7,7 +7,7 @@ import (
 	"github.com/shashikedissanayake/web-page-analyzer/server/model"
 )
 
-//go:generate mockgen -source=response-writer.go -destination=response-writer_mock.go -package=utils
+//go:generate mockgen -source=response_writer.go -destination=response_writer_mock.go -package=utils
 type IResponseWriter interface {
 	SendSuccessResponse(http.ResponseWriter, int, string, any)
 	SendErrorResponse(http.ResponseWriter, int, string, any)

@@ -1,4 +1,4 @@
-package core
+package router
 
 import (
 	"github.com/go-chi/chi/v5"
@@ -20,7 +20,7 @@ func CreateNewRouter(s *Server) *chi.Mux {
 	router.Use(middleware.Logger)
 
 	// Public routes
-	router.Get("/health_check", s.healthCheckController.HealthCheck)
+	router.Get("/health_check", s.HealthCheckController.HealthCheck)
 
 	// Authenticated routes
 	router.Group(func(r chi.Router) {

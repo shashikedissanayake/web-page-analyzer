@@ -26,19 +26,20 @@ func (ss *ScraperService) ScrapeWebPage(url string) (*model.ScraperResponse, err
 		return nil, err
 	}
 
-	internalLinkCount, internalInaccessibleLinkCount := 0, 0
-	for _, val := range res.Links.Internal {
-		internalLinkCount++
-		if !val {
-			internalInaccessibleLinkCount++
-		}
-	}
-
-	externalLinkCount, externalInaccessibleLinkCount := 0, 0
-	for _, val := range res.Links.External {
-		externalLinkCount++
-		if !val {
-			externalInaccessibleLinkCount++
+	totalLinks, internalLinks, internalInaccessibleLinks, externalLinks, externalInaccessibleLinks := 0, 0, 0, 0, 0
+	for _, link := range res.Links {
+		totalLinks += link.Count
+		switch link.LinkType {
+		case utils.INTERNAL:
+			internalLinks++
+			if !link.IsAccessible {
+				internalInaccessibleLinks++
+			}
+		case utils.EXTERNAL:
+			externalLinks++
+			if !link.IsAccessible {
+				externalInaccessibleLinks++
+			}
 		}
 	}
 
@@ -46,10 +47,11 @@ func (ss *ScraperService) ScrapeWebPage(url string) (*model.ScraperResponse, err
 		Url:                           url,
 		HtmlVersion:                   res.HtmlVersion,
 		PageTitle:                     res.Title,
-		InternalLinkCount:             internalLinkCount,
-		InternalInaccessibleLinkCount: internalInaccessibleLinkCount,
-		ExternalLinkCount:             externalLinkCount,
-		ExternalInaccessibleLinkCount: externalInaccessibleLinkCount,
+		TotalLinkCount:                totalLinks,
+		InternalLinkCount:             internalLinks,
+		InternalInaccessibleLinkCount: internalInaccessibleLinks,
+		ExternalLinkCount:             externalLinks,
+		ExternalInaccessibleLinkCount: externalInaccessibleLinks,
 		IsLoginForm:                   res.IsLoginForm,
 		HeaderTagCount: model.HeaderTagsCount{
 			H1: res.HeaderTags["h1"],

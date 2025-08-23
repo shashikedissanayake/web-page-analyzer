@@ -14,6 +14,7 @@ type ScraperResponse struct {
 	HtmlVersion                   string          `json:"htmlVersion"`
 	PageTitle                     string          `json:"pageTitle"`
 	HeaderTagCount                HeaderTagsCount `json:"headerTagCount"`
+	TotalLinkCount                int             `json:"totalLinkCount"`
 	InternalLinkCount             int             `json:"internalLinkCount"`
 	InternalInaccessibleLinkCount int             `json:"internalInaccessibleLinkCount"`
 	ExternalLinkCount             int             `json:"externalLinkCount"`

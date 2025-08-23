@@ -8,7 +8,9 @@ export const Response = ({
                 error &&
                 <div>
                     <h2>Failed to analyze URL</h2>
-                    <p>{error}</p>
+                    <p>message: {error.message}</p>
+                    <p>code: {error.code}</p>
+                    <p>error: {error.error}</p>
                 </div>
             }
             {
@@ -18,10 +20,11 @@ export const Response = ({
                     <h3>Html version: {data.htmlVersion}</h3>
                     <h3>Page title: {data.pageTitle}</h3>
                     <h3>Is a login form: {data.isLoginForm ? 'yes' : 'no'}</h3>
-                    <h3>Internal link count: {data.internalLinkCount}</h3>
-                    <h3>Inaccessible Internal link count: {data.internalInaccessibleLinkCount}</h3>
-                    <h3>External link count: {data.externalLinkCount}</h3>
-                    <h3>Inaccessible External link count: {data.externalInaccessibleLinkCount}</h3>
+                    <h3>Total link count: {data.totalLinkCount}</h3>
+                    <h3>Unique Internal link count: {data.internalLinkCount}</h3>
+                    <h3>Unique Inaccessible Internal link count: {data.internalInaccessibleLinkCount}</h3>
+                    <h3>Unique External link count: {data.externalLinkCount}</h3>
+                    <h3>Unique Inaccessible External link count: {data.externalInaccessibleLinkCount}</h3>
                     {
                         Object.entries(data?.headerTagCount || {}).length > 0 ?
                             <>

@@ -34,7 +34,7 @@ func (sc *ScraperController) ScrapeWebPage(w http.ResponseWriter, r *http.Reques
 	var request model.ScraperRequest
 	err := json.NewDecoder(r.Body).Decode(&request)
 	if err != nil {
-		sc.responseWriter.SendErrorResponse(w, http.StatusUnprocessableEntity, "Failed to decode json", err.Error())
+		sc.responseWriter.SendErrorResponse(w, http.StatusBadRequest, "Invalid payload", err.Error())
 		return
 	}
 	logger.Info("Recieved request to scrape webpage with payload:", request)
@@ -46,7 +46,7 @@ func (sc *ScraperController) ScrapeWebPage(w http.ResponseWriter, r *http.Reques
 
 	res, err := sc.service.ScrapeWebPage(request.Url)
 	if err != nil {
-		sc.responseWriter.SendErrorResponse(w, http.StatusUnprocessableEntity, "Failed to scrape web page", err.Error())
+		sc.responseWriter.SendErrorResponse(w, http.StatusUnprocessableEntity, "Failed to analyze web page", err.Error())
 		return
 	}
 	sc.responseWriter.SendSuccessResponse(w, http.StatusOK, "Success", res)

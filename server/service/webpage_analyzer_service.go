@@ -74,7 +74,7 @@ func (wpa *WebPageAnalyzerService) iterateTokenizer(
 	}
 
 	isForm, containsEmailInput, containsPasswordInput := false, false, false
-	wg := sync.WaitGroup{}
+	waitGroup := sync.WaitGroup{}
 	linkDetailsChannel := make(chan model.LinkDetails)
 
 	logger.Info("Start iteration of tokenized webpage")
@@ -114,11 +114,11 @@ loop:
 								Count: 1,
 							}
 
-							wg.Add(1)
-							go wpa.markAccessiblityOfLink(
+							waitGroup.Add(1)
+							go wpa.checkLinkIsAccessible(
 								url,
 								attrbute.Val,
-								&wg,
+								&waitGroup,
 								linkDetailsChannel,
 							)
 						} else {
@@ -144,7 +144,7 @@ loop:
 	}
 	response.IsLoginForm = isForm && containsEmailInput && containsPasswordInput
 	logger.Info("Finised iteration of tokenized webpage")
-	wg.Wait()
+	waitGroup.Wait()
 	close(linkDetailsChannel)
 	logger.Info("Finised all worker thread")
 	return response
@@ -164,14 +164,14 @@ func (wpa *WebPageAnalyzerService) getHTMLVersion(doctypeToken *html.Token) stri
 	return "Unknown"
 }
 
-func (wpa *WebPageAnalyzerService) markAccessiblityOfLink(
+func (wpa *WebPageAnalyzerService) checkLinkIsAccessible(
 	currentUrl string,
 	key string,
-	wg *sync.WaitGroup,
+	waitGroup *sync.WaitGroup,
 	linkDetailsChan chan<- model.LinkDetails,
 ) {
 	logger.Info("Started fetching head object of key:", key)
-	defer wg.Done()
+	defer waitGroup.Done()
 
 	url := key
 	isValidUrl := utils.IsValidURL(url)

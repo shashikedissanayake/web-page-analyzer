@@ -13,6 +13,13 @@ type IResponseWriter interface {
 	SendErrorResponse(http.ResponseWriter, int, string, any)
 }
 
+var (
+	SERVER_FAILURE_RESPONSE = &model.BaseResponse{
+		StatusCode: http.StatusInternalServerError,
+		Message:    "Failed to parse response",
+	}
+)
+
 type ResponseWriter struct{}
 
 func CreateNewResponseWriter() IResponseWriter {
@@ -29,12 +36,18 @@ func (rw *ResponseWriter) SendSuccessResponse(w http.ResponseWriter, status int,
 		Data:       data,
 	}
 
-	json.NewEncoder(w).Encode(res)
+	resJson, err := json.Marshal(res)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(SERVER_FAILURE_RESPONSE)
+	}
+
+	w.WriteHeader(status)
+	w.Write(resJson)
 }
 
 func (re *ResponseWriter) SendErrorResponse(w http.ResponseWriter, status int, message string, reason any) {
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
 
 	res := model.BaseResponse{
 		StatusCode: status,
@@ -42,5 +55,12 @@ func (re *ResponseWriter) SendErrorResponse(w http.ResponseWriter, status int, m
 		Error:      reason,
 	}
 
-	json.NewEncoder(w).Encode(res)
+	resJson, err := json.Marshal(res)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(SERVER_FAILURE_RESPONSE)
+	}
+
+	w.WriteHeader(status)
+	w.Write(resJson)
 }

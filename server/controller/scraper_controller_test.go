@@ -1,8 +1,14 @@
 package controller
 
 import (
+	"encoding/json"
+	"errors"
+	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
 
+	"github.com/shashikedissanayake/web-page-analyzer/server/model"
 	"github.com/shashikedissanayake/web-page-analyzer/server/service"
 	"github.com/shashikedissanayake/web-page-analyzer/server/utils"
 	"github.com/stretchr/testify/suite"
@@ -11,9 +17,9 @@ import (
 
 type ScraperControllerSuite struct {
 	suite.Suite
-	controller         IScraperController
-	mockService        *service.MockIScraperService
-	mockResponseWriter *utils.MockIResponseWriter
+	controller     IScraperController
+	responseWriter utils.IResponseWriter
+	mockService    *service.MockIScraperService
 }
 
 func TestScraperControllerSuite(t *testing.T) {
@@ -21,68 +27,80 @@ func TestScraperControllerSuite(t *testing.T) {
 }
 
 func (scs *ScraperControllerSuite) SetupTest() {
-	scs.mockResponseWriter = utils.NewMockIResponseWriter(gomock.NewController(scs.T()))
+	scs.responseWriter = utils.CreateNewResponseWriter()
 	scs.mockService = service.NewMockIScraperService(gomock.NewController(scs.T()))
-	scs.controller = CreateNewScraperController(scs.mockService, scs.mockResponseWriter)
+	scs.controller = CreateNewScraperController(scs.mockService, scs.responseWriter)
 }
 
 func (scs *ScraperControllerSuite) TestScrapeWebPage() {
-	// type RetFunctionCallArgumants struct {
-	// 	count   int
-	// 	code    int
-	// 	message string
-	// }
+	testCases := []struct {
+		name            string
+		requestBody     string
+		mockInput       string
+		mockError       error
+		mockOutput      *model.ScraperResponse
+		responseCode    int
+		responseMessage string
+	}{
+		{
+			"Return error when passing invaild json payload",
+			"{nil}",
+			"",
+			nil,
+			nil,
+			http.StatusBadRequest,
+			"Invalid payload",
+		},
+		{
+			"Return error when Passing invaild url with payload",
+			"{\"url\": \"test\"}",
+			"",
+			nil,
+			nil,
+			http.StatusBadRequest,
+			"Invalid url",
+		},
+		{
+			"Return error when ScrapeWebPage failed",
+			"{\"url\": \"https://google.com\"}",
+			"https://google.com",
+			errors.New("ScrapeWebPage failed"),
+			nil,
+			http.StatusUnprocessableEntity,
+			"Failed to analyze web page",
+		},
+		{
+			"Return success when ScrapeWebPage retuned success",
+			"{\"url\": \"https://google.com\"}",
+			"https://google.com",
+			nil,
+			&model.ScraperResponse{},
+			http.StatusOK,
+			"Success",
+		},
+	}
 
-	// type RetScrapeWebPage struct {
-	// 	count    int
-	// 	input    string
-	// 	response *model.ScraperResponse
-	// 	err      error
-	// }
+	for _, test := range testCases {
+		scs.T().Run(test.name, func(t *testing.T) {
+			if test.mockInput != "" {
+				scs.mockService.EXPECT().ScrapeWebPage(test.mockInput).Return(
+					test.mockOutput,
+					test.mockError,
+				).Times(1)
+			}
 
-	// var testCases = []struct {
-	// 	name                      string
-	// 	resWriter                 http.ResponseWriter
-	// 	reqReader                 http.Request
-	// 	invokeSendErrorResponse   RetFunctionCallArgumants
-	// 	invokeSendSuccessResponse RetFunctionCallArgumants
-	// 	invokeScrapeWebPage       RetScrapeWebPage
-	// }{
-	// 	{
-	// 		"Call with invalid JSON",
-	// 		http.ResponseWriter{},
-	// 		http.Request{Body: "{test}"},
-	// 		RetFunctionCallArgumants{1, http.StatusUnprocessableEntity, "Failed to decode json"},
-	// 		RetFunctionCallArgumants{0, 0, ""},
-	// 		RetScrapeWebPage{0, "", nil, nil},
-	// 	},
-	// }
+			server := httptest.NewServer(http.HandlerFunc(scs.controller.ScrapeWebPage))
 
-	// for _, test := range testCases {
-	// 	scs.T().Run(test.name, func(t *testing.T) {
-	// 		scs.mockResponseWriter.EXPECT().SendErrorResponse(
-	// 			gomock.Any(),
-	// 			test.invokeSendErrorResponse.code,
-	// 			test.invokeSendErrorResponse.message,
-	// 			gomock.Any(),
-	// 		).Times(test.invokeSendErrorResponse.count)
+			resp, err := http.Post(server.URL, "application/json", strings.NewReader(test.requestBody))
+			if err != nil {
+				scs.T().Error(err)
+			}
+			defer resp.Body.Close()
+			var response model.BaseResponse
+			json.NewDecoder(resp.Body).Decode(&response)
 
-	// 		scs.mockResponseWriter.EXPECT().SendSuccessResponse(
-	// 			gomock.Any(),
-	// 			test.invokeSendSuccessResponse.code,
-	// 			test.invokeSendSuccessResponse.message,
-	// 			gomock.Any(),
-	// 		).Times(test.invokeSendSuccessResponse.count)
-
-	// 		scs.mockService.EXPECT().ScrapeWebPage(
-	// 			test.invokeScrapeWebPage.input,
-	// 		).Return(
-	// 			test.invokeScrapeWebPage.response,
-	// 			test.invokeScrapeWebPage.err,
-	// 		).Times(test.invokeScrapeWebPage.count)
-
-	// 		scs.controller.ScrapeWebPage(test.resWriter, &test.reqReader)
-
-	// 	})
-	// }
+			scs.Equal(test.responseCode, response.StatusCode)
+			scs.Equal(test.responseMessage, response.Message)
+		})
+	}
 }
